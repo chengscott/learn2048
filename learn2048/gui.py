@@ -2,53 +2,7 @@ from learn2048.game import Action, Board
 import tkinter
 from tkinter import Frame, Label, CENTER
 
-BACKGROUND_COLOR = '#92877d'
 BACKGROUND_COLOR_CELL_EMPTY = '#9e948a'
-
-GRID_SIZE = 100
-GRID_PADDING = 10
-
-FONT = ('Verdana', 40, 'bold')
-
-BACKGROUND_COLOR_LIST = [
-    '',
-    '#eee4da',
-    '#ede0c8',
-    '#f2b179',
-    '#f59563',
-    '#f67c5f',
-    '#f65e3b',
-    '#edcf72',
-    '#edcc61',
-    '#edc850',
-    '#edc53f',
-    '#edc22e',
-    '#eee4da',
-    '#edc22e',
-    '#f2b179',
-    '#f59563',
-    '#f67c5f',
-]
-
-CELL_COLOR_LIST = [
-    '',
-    '#776e65',
-    '#776e65',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#f9f6f2',
-    '#776e65',
-    '#f9f6f2',
-    '#776e65',
-    '#776e65',
-    '#f9f6f2',
-]
 
 
 class GuiViewer(Frame):
@@ -67,10 +21,12 @@ class GuiViewer(Frame):
     if play:
       self.master.bind('<Key>', self.key_down)
       self._board = Board(size=size)
-      self.update_grids(self._board)
+      self._score = 0
+      self.update_grids(self._board, self._score)
       self.mainloop()
 
   def key_down(self, event):
+    """capture keydown events"""
     key = event.keysym.lower()
     action = None
     if key == 'up' or key == 'w':
@@ -84,13 +40,54 @@ class GuiViewer(Frame):
     else:
       return
     if action:
-      _, done = self._board.step(action)
-      self.update_grids(self._board)
+      score, _ = self._board.step(action)
+      self._score += score
+      self.update_grids(self._board, self._score)
 
   def _init_grids(self):
+    """initialize game grids"""
+    TOP_BG_COLOR = '#faf8ef'
+    SCORE_BG_COLOR = '#bbada0'
+    GRID_SIZE = 100
+    GRID_PADDING = 10
+    FONT = ('Verdana', 20, 'bold')
+    FONT_TITLE = ('Verdana', 50, 'bold')
+
     width, height = self.size
-    # background
-    background = Frame(self, bg=BACKGROUND_COLOR, width=width, height=height)
+    ## self frame
+    self.configure(bg=TOP_BG_COLOR)
+    ## top frame
+    top = Frame(self, bg=TOP_BG_COLOR)
+    top.grid()
+    # 2048 label
+    Label(top,
+          text='2048',
+          height=2,
+          fg='#776e65',
+          bg=TOP_BG_COLOR,
+          padx=100,
+          font=FONT_TITLE).grid(row=0, column=0)
+    ## score frame
+    score_box = Frame(top, bg=SCORE_BG_COLOR, padx=10, width=100)
+    score_box.grid(row=0, column=1, padx=20, pady=20)
+    # SCORE label
+    Label(score_box,
+          text='SCORE',
+          fg='#eee4da',
+          bg=SCORE_BG_COLOR,
+          padx=10,
+          font=FONT).grid(row=0, column=1)
+    # display score
+    score_label = Label(score_box,
+                        text='0',
+                        fg='#ffffff',
+                        bg=SCORE_BG_COLOR,
+                        font=FONT)
+    score_label.grid(row=1, column=1)
+    self._score_label = score_label
+
+    ## background frame
+    background = Frame(self, bg='#92877d', width=width, height=height)
     background.grid()
     # grids
     for i in range(width):
@@ -112,14 +109,55 @@ class GuiViewer(Frame):
         row += [label]
       self._grids += row
 
-  def update_grids(self, board: Board):
+  def update_grids(self, board: Board, score: int):
+    """update game grids"""
+    bg_colors = (
+        '',
+        '#eee4da',
+        '#ede0c8',
+        '#f2b179',
+        '#f59563',
+        '#f67c5f',
+        '#f65e3b',
+        '#edcf72',
+        '#edcc61',
+        '#edc850',
+        '#edc53f',
+        '#edc22e',
+        '#eee4da',
+        '#edc22e',
+        '#f2b179',
+        '#f59563',
+        '#f67c5f',
+    )
+    cell_colors = (
+        '',
+        '#776e65',
+        '#776e65',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#f9f6f2',
+        '#776e65',
+        '#f9f6f2',
+        '#776e65',
+        '#776e65',
+        '#f9f6f2',
+    )
+
+    self._score_label.configure(text=str(score))
     grids = self._grids
     for i, x in enumerate(board._board):
       if x == 0:
         grids[i].configure(text='', bg=BACKGROUND_COLOR_CELL_EMPTY)
       else:
         grids[i].configure(text=str(1 << x),
-                           bg=BACKGROUND_COLOR_LIST[x],
-                           fg=CELL_COLOR_LIST[x])
+                           bg=bg_colors[x],
+                           fg=cell_colors[x])
     self.update_idletasks()
     self.update()

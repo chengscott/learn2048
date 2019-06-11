@@ -3,6 +3,7 @@ import random
 
 
 class Action(Enum):
+  """Game Actions"""
   UP = 0
   DOWN = 1
   LEFT = 2
@@ -20,7 +21,13 @@ class Board:
       self._board[i], = random.choices([1, 2], [.9, .1])
 
   def _move(self, action: Action):
+    """
+    perform an `action` to the current game board
+    return a _new_ game board and the score correspond to the action
+    """
+
     def flip_horizontal(board):
+      """flip game board horizontally"""
       width, _, total_size = self.size
       return [
           x for i in range(0, total_size, width)
@@ -28,6 +35,7 @@ class Board:
       ]
 
     def transpose(board):
+      """transpose game board"""
       width, height, total_size = self.size
       self.size = height, width, total_size
       return [
@@ -36,6 +44,7 @@ class Board:
       ]
 
     def move_right(board):
+      """slide game board to right"""
       width, _, total_size = self.size
       board_, score = [], 0
       for row in [board[i:i + width] for i in range(0, total_size, width)]:
@@ -77,11 +86,15 @@ class Board:
       raise Exception('Illegal Action')
 
   def _popup(self):
+    """popup a grid of `2` or `4` in `self._board`"""
     board = self._board
     index = [i for i, x in enumerate(board) if x == 0]
     if index:
       idx = random.choice(index)
       board[idx], = random.choices([1, 2], [.9, .1])
+
+  def _check_done(self, board):
+    """check if `board` has done"""
     for action in Action:
       if self._move(action)[0] != board:
         return False
@@ -98,10 +111,11 @@ class Board:
 
   def step(self, action: Action):
     board, score = self._move(action)
-    if board == self._board:
-      return 0, False
-    self._board = board
-    return score, self._popup()
+    done = self._check_done(board)
+    if board != self._board:
+      self._board = board
+      self._popup()
+    return score, done
 
 
 class Game2048Env:
@@ -111,14 +125,17 @@ class Game2048Env:
   def __init__(self, *, size=(4, 4)):
     self.size = size
     self._board = Board(size=size)
+    self._score = 0
     self._viewer = None
 
   def step(self, action: Action):
     score, done = self._board.step(action)
-    return self._board, score, done, {}
+    self._score += score
+    return self._board, self._score, done, {}
 
   def reset(self):
     self._board = Board(size=self.size)
+    self._score = 0
     return self._board
 
   def render(self, mode='human'):
@@ -129,4 +146,4 @@ class Game2048Env:
         from learn2048.gui import GuiViewer
         self._viewer = GuiViewer()
       else:
-        self._viewer.update_grids(self._board)
+        self._viewer.update_grids(self._board, self._score)
