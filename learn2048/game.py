@@ -86,7 +86,7 @@ class Board:
       raise Exception('Illegal Action')
 
   def _popup(self):
-    """popup a grid of `2` or `4` in `self._board`"""
+    """popup a tile of `2` or `4` in `self._board`"""
     board = self._board
     index = [i for i, x in enumerate(board) if x == 0]
     if index:
@@ -100,6 +100,11 @@ class Board:
         return False
     return True
 
+  def _check_status(self, board):
+    """check the status of the `board`"""
+    has_2048 = any([x > 10 for x in board])
+    return ['You Lose', 'You Win'][has_2048]
+
   def __str__(self):
     width, height, total_size = self.size
     bar = '+' + '-' * (6 * width) + '+'
@@ -112,10 +117,13 @@ class Board:
   def step(self, action: Action):
     board, score = self._move(action)
     done = self._check_done(board)
+    status = ''
+    if done:
+      status = self._check_status(board)
     if board != self._board:
       self._board = board
       self._popup()
-    return score, done
+    return score, done, status
 
 
 class Game2048Env:
@@ -126,16 +134,18 @@ class Game2048Env:
     self.size = size
     self._board = Board(size=size)
     self._score = 0
+    self._status = ''
     self._viewer = None
 
   def step(self, action: Action):
-    score, done = self._board.step(action)
+    score, done, self._status = self._board.step(action)
     self._score += score
-    return self._board, self._score, done, {}
+    return self._board, self._score, done, self._status
 
   def reset(self):
     self._board = Board(size=self.size)
     self._score = 0
+    self._status = ''
     return self._board
 
   def render(self, mode='human'):
@@ -145,5 +155,4 @@ class Game2048Env:
       if self._viewer is None:
         from learn2048.gui import GuiViewer
         self._viewer = GuiViewer()
-      else:
-        self._viewer.update_grids(self._board, self._score)
+      self._viewer.update_grids(self._board, self._score, self._status)

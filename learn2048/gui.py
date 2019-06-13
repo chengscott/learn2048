@@ -40,9 +40,9 @@ class GuiViewer(Frame):
     else:
       return
     if action:
-      score, _ = self._board.step(action)
+      score, _, status = self._board.step(action)
       self._score += score
-      self.update_grids(self._board, self._score)
+      self.update_grids(self._board, self._score, status)
 
   def _init_grids(self):
     """initialize game grids"""
@@ -59,26 +59,43 @@ class GuiViewer(Frame):
     ## top frame
     top = Frame(self, bg=TOP_BG_COLOR)
     top.grid()
+
+    ## title frame
+    title_frame = Frame(top, bg=TOP_BG_COLOR, padx=10, width=100)
+    title_frame.grid(row=0, column=0, padx=10, pady=10)
     # 2048 label
-    Label(top,
+    Label(title_frame,
           text='2048',
-          height=2,
+          height=1,
           fg='#776e65',
           bg=TOP_BG_COLOR,
-          padx=100,
+          padx=60,
+          pady=0,
           font=FONT_TITLE).grid(row=0, column=0)
+    # status label
+    status = Label(title_frame,
+                   text='',
+                   height=1,
+                   fg='#776e65',
+                   bg=TOP_BG_COLOR,
+                   padx=60,
+                   pady=0,
+                   font=FONT)
+    status.grid(row=1, column=0)
+    self._status = status
+
     ## score frame
-    score_box = Frame(top, bg=SCORE_BG_COLOR, padx=10, width=100)
-    score_box.grid(row=0, column=1, padx=20, pady=20)
+    score_frame = Frame(top, bg=SCORE_BG_COLOR, padx=10, width=100)
+    score_frame.grid(row=0, column=1, padx=40, pady=20)
     # SCORE label
-    Label(score_box,
+    Label(score_frame,
           text='SCORE',
           fg='#eee4da',
           bg=SCORE_BG_COLOR,
           padx=10,
           font=FONT).grid(row=0, column=1)
     # display score
-    score_label = Label(score_box,
+    score_label = Label(score_frame,
                         text='0',
                         fg='#ffffff',
                         bg=SCORE_BG_COLOR,
@@ -109,7 +126,7 @@ class GuiViewer(Frame):
         row += [label]
       self._grids += row
 
-  def update_grids(self, board: Board, score: int):
+  def update_grids(self, board: Board, score: int, status=''):
     """update game grids"""
     bg_colors = (
         '',
@@ -151,6 +168,7 @@ class GuiViewer(Frame):
     )
 
     self._score_label.configure(text=str(score))
+    self._status.configure(text=status)
     grids = self._grids
     for i, x in enumerate(board._board):
       if x == 0:
